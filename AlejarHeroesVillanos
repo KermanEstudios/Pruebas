@@ -1,0 +1,72 @@
+-- Services
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local Teams = game:GetService("Teams")
+
+-- Configuration
+local SPAWN_NAMES = {"SpawnHeroes", "Heroes Spawn", "SpawnVillains", "Villains Spawn"}
+local DISTANCE = 20  -- Distance to move away from the spawn points
+local TEAM_NAMES = {"Heroes", "Villains", "Villanos"}
+
+-- Function to find spawn locations
+local function findSpawns()
+    local spawns = {}
+    for _, name in ipairs(SPAWN_NAMES) do
+        local spawn = Workspace:FindFirstChild(name)
+        if spawn then
+            table.insert(spawns, spawn)
+        end
+    end
+    return spawns
+end
+
+-- Function to get all players including those in specific teams
+local function getPlayers()
+    local allPlayers = Players:GetPlayers()
+    local teamPlayers = {}
+
+    for _, teamName in ipairs(TEAM_NAMES) do
+        local team = Teams:FindFirstChild(teamName)
+        if team then
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player.Team == team then
+                    table.insert(teamPlayers, player)
+                end
+            end
+        end
+    end
+
+    -- Add all players to the list if not already added
+    for _, player in ipairs(allPlayers) do
+        if not table.find(teamPlayers, player) then
+            table.insert(teamPlayers, player)
+        end
+    end
+    
+    return teamPlayers
+end
+
+-- Function to move players away from spawn points
+local function movePlayersAwayFromSpawns()
+    local spawns = findSpawns()
+    if #spawns == 0 then
+        warn("No spawn points found.")
+        return
+    end
+
+    local players = getPlayers()
+    for _, player in pairs(players) do
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local humanoidRootPart = player.Character.HumanoidRootPart
+            -- Move player away from each spawn
+            for _, spawn in ipairs(spawns) do
+                local direction = (humanoidRootPart.Position - spawn.Position).unit
+                local newPosition = humanoidRootPart.Position + direction * DISTANCE
+                humanoidRootPart.CFrame = CFrame.new(newPosition)
+            end
+        end
+    end
+end
+
+-- Execute the function to move players
+movePlayersAwayFromSpawns()
