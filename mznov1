@@ -1272,20 +1272,16 @@ local function sendToDiscord(message)
     end
 end
 
--- Function to handle player joining
-local function onPlayerAdded(player)
-    -- Send a message to Discord when a player joins
-    sendToDiscord(player.Name .. " has joined the game.")
-
-    -- Optional: Handle player actions or commands here
-end
-
 -- Function to handle chat messages and send them to Discord
 local function onChatMessage(message, player)
     if player then
-        sendToDiscord(player.Name .. ": " .. message.Text)
+        local formattedMessage = player.Name .. ": " .. message.Text
+        print("Sending message to Discord: " .. formattedMessage)
+        sendToDiscord(formattedMessage)
     else
-        sendToDiscord("An anonymous player: " .. message.Text)
+        local formattedMessage = "An anonymous player: " .. message.Text
+        print("Sending anonymous message to Discord: " .. formattedMessage)
+        sendToDiscord(formattedMessage)
     end
 end
 
@@ -1293,19 +1289,8 @@ end
 ChatService.OnMessageReceived = onChatMessage
 
 -- Connect the function to the PlayerAdded event
+local function onPlayerAdded(player)
+    -- Optional: Additional code for when a player joins
+end
+
 Players.PlayerAdded:Connect(onPlayerAdded)
-
--- Optional: Handle player respawns or other actions here
-local function onCharacterAdded(character)
-    -- You can add more actions to perform when a player's character is added
-    print(character.Parent.Name .. "'s character added.")
-end
-
--- Connect player characters to the CharacterAdded event
-for _, player in ipairs(Players:GetPlayers()) do
-    player.CharacterAdded:Connect(onCharacterAdded)
-end
-
-Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Connect(onCharacterAdded)
-end)
