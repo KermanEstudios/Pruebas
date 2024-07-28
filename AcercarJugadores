@@ -1,34 +1,127 @@
--- Get the Players service
+-- Services
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local PathfindingService = game:GetService("PathfindingService")
+local Debris = game:GetService("Debris")
 
--- Function to move all players towards a target player
+-- Constants
+local MOVEMENT_DURATION = 1         -- Duration for movement tweens
+local PATHFINDING_RADIUS = 50        -- Maximum distance for pathfinding
+local TARGET_PLAYER_NAME = "TargetPlayer" -- Replace with your target player's name
+local DEBUG_MODE = true             -- Enable or disable debug logs
+local COLLISION_CHECK_INTERVAL = 0.5 -- Interval for collision checks
+local TWEEN_INFO = TweenInfo.new(MOVEMENT_DURATION, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut)
+
+-- Utility Functions
+
+-- Create a tween to smoothly move a player
+local function createTween(playerHRP, targetPosition)
+    local goal = {Position = targetPosition}
+    local tween = TweenService:Create(playerHRP, TWEEN_INFO, goal)
+    return tween
+end
+
+-- Retrieve the target player by their name
+local function getTargetPlayerByName(name)
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Name == name then
+            return player
+        end
+    end
+    return nil
+end
+
+-- Move all players towards the target player
 local function movePlayersToTarget(targetPlayer)
-    -- Check if the target player has a character and the HumanoidRootPart
     if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        warn("Target player is not valid.")
         return
     end
 
-    -- Get the target player's position
     local targetPosition = targetPlayer.Character.HumanoidRootPart.Position
 
-    -- Iterate over all players in the game
     for _, player in pairs(Players:GetPlayers()) do
-        -- Check if the player is not the target player
-        if player ~= targetPlayer then
-            -- Check if the player has a character and the HumanoidRootPart
-            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                -- Move the player's character towards the target player
-                player.Character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
+        if player ~= targetPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local playerHRP = player.Character.HumanoidRootPart
+            local playerPosition = playerHRP.Position
+            local distance = (targetPosition - playerPosition).magnitude
+
+            if distance < PATHFINDING_RADIUS then
+                local path = PathfindingService:CreatePath({
+                    AgentRadius = 2,
+                    AgentHeight = 5,
+                    AgentCanJump = true,
+                    AgentJumpHeight = 10,
+                    AgentMaxSlope = 45,
+                })
+
+                path:ComputeAsync(playerPosition, targetPosition)
+                path.StatusChanged:Connect(function(status)
+                    if DEBUG_MODE then
+                        print(string.format("Pathfinding status for player %s: %s", player.Name, status))
+                    end
+                end)
+
+                path:MoveTo(player.Character.Humanoid)
+                path.Completed:Connect(function(result)
+                    if result == Enum.PathStatus.Complete then
+                        local tween = createTween(playerHRP, targetPosition)
+                        tween:Play()
+                    else
+                        warn(string.format("Pathfinding failed for player %s. Status: %s", player.Name, result))
+                    end
+                end)
+
+                if DEBUG_MODE then
+                    print(string.format("Moving player %s towards target %s. Player Position: %s, Target Position: %s, Distance: %f",
+                        player.Name, targetPlayer.Name, playerPosition, targetPosition, distance))
+                end
+            else
+                if DEBUG_MODE then
+                    warn(string.format("Player %s is too far from the target player %s. Distance: %f", player.Name, targetPlayer.Name, distance))
+                end
             end
         end
     end
 end
 
--- Set the target player (change this to the desired target player)
-local targetPlayer = Players.LocalPlayer  -- Change this according to the target player
-
--- Continuously update players' positions towards the target player
-while true do
-    movePlayersToTarget(targetPlayer)
-    wait(1)  -- Wait 1 second before updating again
+-- Avoid collisions between players
+local function avoidCollisions()
+    local players = Players:GetPlayers()
+    for _, player in pairs(players) do
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local playerHRP = player.Character.HumanoidRootPart
+            for _, otherPlayer in pairs(players) do
+                if player ~= otherPlayer and otherPlayer.Character and otherPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local otherHRP = otherPlayer.Character.HumanoidRootPart
+                    local distance = (playerHRP.Position - otherHRP.Position).magnitude
+                    if distance < 5 then  -- Collision avoidance range
+                        local offset = (playerHRP.Position - otherHRP.Position).unit * 5
+                        playerHRP.Position = playerHRP.Position + offset
+                        if DEBUG_MODE then
+                            warn(string.format("Collision avoidance for player %s with %s. Distance: %f", player.Name, otherPlayer.Name, distance))
+                        end
+                    end
+                end
+            end
+        end
+    end
 end
+
+-- Monitor and handle player movement and collisions
+local function monitorAndHandlePlayers()
+    while true do
+        local targetPlayer = getTargetPlayerByName(TARGET_PLAYER_NAME)
+        if targetPlayer then
+            movePlayersToTarget(targetPlayer)
+        else
+            warn("Target player not found.")
+        end
+        wait(COLLISION_CHECK_INTERVAL)
+        avoidCollisions()
+    end
+end
+
+-- Start monitoring player movement and handling collisions
+RunService.Heartbeat:Connect(monitorAndHandlePlayers)
