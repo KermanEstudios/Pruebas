@@ -1,0 +1,62 @@
+-- Services
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local Teams = game:GetService("Teams")
+local Workspace = game:GetService("Workspace")
+
+-- Configuration
+local SPAWN_SIZE = Vector3.new(4, 1, 4)  -- Size of the spawn points
+
+-- Get player and mouse
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+
+-- Ensure teams exist
+local function getTeam(name)
+    return Teams:FindFirstChild(name)
+end
+
+local heroesTeam = getTeam("Heroes")
+local villainsTeam = getTeam("Villains")
+
+if not heroesTeam or not villainsTeam then
+    warn("Teams 'Heroes' and/or 'Villains' not found. Please create these teams in the Teams service.")
+    return
+end
+
+-- Function to remove all existing spawn points
+local function removeAllSpawns()
+    for _, child in pairs(Workspace:GetChildren()) do
+        if child:IsA("SpawnLocation") then
+            child:Destroy()
+        end
+    end
+end
+
+-- Function to create a spawn point at a given position
+local function createSpawnPoint(position, team)
+    local spawn = Instance.new("SpawnLocation")
+    spawn.Size = SPAWN_SIZE
+    spawn.Position = position
+    spawn.Anchored = true
+    spawn.TeamColor = team.TeamColor
+    spawn.Parent = Workspace
+end
+
+-- Function to handle mouse click and create a spawn point
+local function onMouseClick()
+    local clickPosition = mouse.Hit.Position
+    -- Randomly select a team
+    local team = math.random(1, 2) == 1 and heroesTeam or villainsTeam
+
+    -- Create a spawn point for the selected team
+    createSpawnPoint(clickPosition, team)
+end
+
+-- Bind mouse click to the function
+mouse.Button1Click:Connect(function()
+    -- Remove all existing spawns
+    removeAllSpawns()
+    -- Handle the mouse click event
+    onMouseClick()
+end)
