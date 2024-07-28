@@ -1,0 +1,95 @@
+-- Services
+local Workspace = game:GetService("Workspace")
+
+-- Function to remove buildings
+local function removeBuildings()
+    local buildings = Workspace:FindFirstChild("City") and Workspace.City:FindFirstChild("Buildings")
+    if buildings then
+        buildings:Destroy()
+    else
+        warn("Buildings model not found.")
+    end
+end
+
+-- Function to remove the bank
+local function removeBank()
+    local bank = Workspace:FindFirstChild("City") and Workspace.City:FindFirstChild("Interactive")
+        and Workspace.City.Interactive:FindFirstChild("Bank")
+        and Workspace.City.Interactive.Bank:FindFirstChild("Model")
+    if bank then
+        bank:Destroy()
+    else
+        warn("Bank model not found.")
+    end
+end
+
+-- Function to remove a specific object in the police station
+local function removePoliceStationObject()
+    local policeStation = Workspace:FindFirstChild("City") and Workspace.City:FindFirstChild("Interactive")
+        and Workspace.City.Interactive:FindFirstChild("Police Station")
+    if policeStation then
+        local children = policeStation:GetChildren()
+        if children[28] then
+            children[28]:Destroy()
+        else
+            warn("Specific object in police station not found.")
+        end
+    else
+        warn("Police Station not found.")
+    end
+end
+
+-- Function to remove the warehouse in Grove
+local function removeGroveWarehouse()
+    local warehouse = Workspace:FindFirstChild("City") and Workspace.City:FindFirstChild("Interactive")
+        and Workspace.City.Interactive:FindFirstChild("Grove")
+        and Workspace.City.Interactive.Grove:FindFirstChild("WareHouse")
+    if warehouse then
+        warehouse:Destroy()
+    else
+        warn("Warehouse in Grove not found.")
+    end
+end
+
+-- Function to remove a specific object in the Main Plaza
+local function removeMainPlazaObject()
+    local mainPlaza = Workspace:FindFirstChild("City") and Workspace.City:FindFirstChild("Interactive")
+        and Workspace.City.Interactive:FindFirstChild("Main Plaza")
+    if mainPlaza then
+        local children = mainPlaza:GetChildren()
+        if children[38] then
+            children[38]:Destroy()
+        else
+            warn("Specific object in Main Plaza not found.")
+        end
+    else
+        warn("Main Plaza not found.")
+    end
+end
+
+-- Function to remove all barriers in SafeZones
+local function removeSafeZoneBarriers()
+    local safeZones = Workspace:FindFirstChild("SafeZones")
+    if safeZones then
+        for _, barrier in pairs(safeZones:GetChildren()) do
+            if barrier.Name == "Barrier" then
+                barrier:Destroy()
+            end
+        end
+    else
+        warn("SafeZones not found.")
+    end
+end
+
+-- Execute all functions
+local function execute()
+    removeBuildings()
+    removeBank()
+    removePoliceStationObject()
+    removeGroveWarehouse()
+    removeMainPlazaObject()
+    removeSafeZoneBarriers()
+end
+
+-- Call the function to run the script
+execute()
