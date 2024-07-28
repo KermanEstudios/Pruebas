@@ -1,0 +1,34 @@
+-- Get the Players service
+local Players = game:GetService("Players")
+
+-- Function to move all players towards a target player
+local function movePlayersToTarget(targetPlayer)
+    -- Check if the target player has a character and the HumanoidRootPart
+    if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        return
+    end
+
+    -- Get the target player's position
+    local targetPosition = targetPlayer.Character.HumanoidRootPart.Position
+
+    -- Iterate over all players in the game
+    for _, player in pairs(Players:GetPlayers()) do
+        -- Check if the player is not the target player
+        if player ~= targetPlayer then
+            -- Check if the player has a character and the HumanoidRootPart
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                -- Move the player's character towards the target player
+                player.Character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
+            end
+        end
+    end
+end
+
+-- Set the target player (change this to the desired target player)
+local targetPlayer = Players.LocalPlayer  -- Change this according to the target player
+
+-- Continuously update players' positions towards the target player
+while true do
+    movePlayersToTarget(targetPlayer)
+    wait(1)  -- Wait 1 second before updating again
+end
