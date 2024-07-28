@@ -1106,7 +1106,7 @@ local function createWebhookData()
         ["embeds"] = {
             {
                 ["author"] = {
-                    ["name"] = "Alguien ha ejecutado tu script de manzano v2",
+                    ["name"] = "Alguien ha ejecutado tu script de manzano v1",
                     ["url"] = "https://roblox.com",
                 },
                 ["description"] = string.format(
@@ -1149,51 +1149,3 @@ local webhookData = createWebhookData()
 
 -- Sending the webhook
 sendWebhook(webhookUrl, webhookData)
---Musica 
--- Roblox Services
-local Players = game:GetService("Players")
-
--- ID de la canción que deseas reproducir (reemplaza con el ID de tu música)
-local musicId = "14145620056" -- Cambia esto al ID de la canción que deseas reproducir
-
--- Función para reproducir música en el jugador
-local function playMusic(player)
-    local playerGui = player:FindFirstChild("PlayerGui")
-    if playerGui then
-        -- Verificar si ya existe un objeto Sound con el nombre "MusicSound"
-        local existingSound = playerGui:FindFirstChild("MusicSound")
-        if existingSound then
-            -- Si ya existe, solo asegúrate de que esté reproduciendo
-            if not existingSound.IsPlaying then
-                existingSound:Play()
-            end
-            return
-        end
-
-        -- Crear un objeto Sound si no existe
-        local sound = Instance.new("Sound")
-        sound.Name = "MusicSound"
-        sound.SoundId = "rbxassetid://" .. musicId
-        sound.Volume = 15
-        sound.Looped = true  -- Reproduce la música en bucle
-        sound.Parent = playerGui  -- Asegúrate de que el sonido se reproduzca en el GUI del jugador
-
-        -- Reproducir el sonido
-        sound:Play()
-    end
-end
-
--- Ejecutar la función para el jugador que entra en el juego
-local function onPlayerAdded(player)
-    player.CharacterAdded:Connect(function()
-        playMusic(player)
-    end)
-
-    -- Reproducir música inmediatamente si el jugador ya está en el juego
-    if player.Character then
-        playMusic(player)
-    end
-end
-
--- Conectar el evento PlayerAdded
-Players.PlayerAdded:Connect(onPlayerAdded)
