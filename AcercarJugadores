@@ -3,47 +3,42 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local PathfindingService = game:GetService("PathfindingService")
-local Debris = game:GetService("Debris")
 
 -- Constants
-local MOVEMENT_DURATION = 1         -- Duration for movement tweens
-local PATHFINDING_RADIUS = 50        -- Maximum distance for pathfinding
-local TARGET_PLAYER_NAME = "TargetPlayer" -- Replace with your target player's name
-local DEBUG_MODE = true             -- Enable or disable debug logs
+local MOVEMENT_DURATION = 1          -- Duration for movement tweens
+local PATHFINDING_RADIUS = 50         -- Radius within which pathfinding is applied
+local TARGET_PLAYER_NAME = "TargetPlayer" -- Replace with the target player's name
+local DEBUG_MODE = false             -- Set to true for debug logs
 local COLLISION_CHECK_INTERVAL = 0.5 -- Interval for collision checks
-local TWEEN_INFO = TweenInfo.new(MOVEMENT_DURATION, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut)
 
 -- Utility Functions
 
--- Create a tween to smoothly move a player
+-- Create a tween for smooth movement
 local function createTween(playerHRP, targetPosition)
-    local goal = {Position = targetPosition}
-    local tween = TweenService:Create(playerHRP, TWEEN_INFO, goal)
+    local tweenInfo = TweenInfo.new(MOVEMENT_DURATION, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut)
+    local tween = TweenService:Create(playerHRP, tweenInfo, {Position = targetPosition})
     return tween
 end
 
--- Retrieve the target player by their name
-local function getTargetPlayerByName(name)
+-- Get the target player by name
+local function getTargetPlayer()
     for _, player in pairs(Players:GetPlayers()) do
-        if player.Name == name then
+        if player.Name == TARGET_PLAYER_NAME then
             return player
         end
     end
     return nil
 end
 
--- Move all players towards the target player
-local function movePlayersToTarget(targetPlayer)
-    if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        warn("Target player is not valid.")
-        return
-    end
+-- Move players towards the target player
+local function movePlayers(targetPlayer)
+    if not targetPlayer or not targetPlayer.Character then return end
 
-    local targetPosition = targetPlayer.Character.HumanoidRootPart.Position
+    local targetPosition = targetPlayer.Character:WaitForChild("HumanoidRootPart").Position
 
     for _, player in pairs(Players:GetPlayers()) do
-        if player ~= targetPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local playerHRP = player.Character.HumanoidRootPart
+        if player ~= targetPlayer and player.Character then
+            local playerHRP = player.Character:WaitForChild("HumanoidRootPart")
             local playerPosition = playerHRP.Position
             local distance = (targetPosition - playerPosition).magnitude
 
@@ -59,48 +54,44 @@ local function movePlayersToTarget(targetPlayer)
                 path:ComputeAsync(playerPosition, targetPosition)
                 path.StatusChanged:Connect(function(status)
                     if DEBUG_MODE then
-                        print(string.format("Pathfinding status for player %s: %s", player.Name, status))
+                        print(string.format("Pathfinding status for %s: %s", player.Name, status))
                     end
                 end)
 
-                path:MoveTo(player.Character.Humanoid)
+                path:MoveTo(player.Character:WaitForChild("Humanoid"))
                 path.Completed:Connect(function(result)
                     if result == Enum.PathStatus.Complete then
-                        local tween = createTween(playerHRP, targetPosition)
-                        tween:Play()
-                    else
-                        warn(string.format("Pathfinding failed for player %s. Status: %s", player.Name, result))
+                        createTween(playerHRP, targetPosition):Play()
+                    elseif DEBUG_MODE then
+                        warn(string.format("Pathfinding failed for %s. Status: %s", player.Name, result))
                     end
                 end)
 
                 if DEBUG_MODE then
-                    print(string.format("Moving player %s towards target %s. Player Position: %s, Target Position: %s, Distance: %f",
-                        player.Name, targetPlayer.Name, playerPosition, targetPosition, distance))
+                    print(string.format("Moving %s towards %s. Distance: %.2f", player.Name, targetPlayer.Name, distance))
                 end
-            else
-                if DEBUG_MODE then
-                    warn(string.format("Player %s is too far from the target player %s. Distance: %f", player.Name, targetPlayer.Name, distance))
-                end
+            elseif DEBUG_MODE then
+                warn(string.format("%s is too far from %s. Distance: %.2f", player.Name, targetPlayer.Name, distance))
             end
         end
     end
 end
 
--- Avoid collisions between players
+-- Basic collision avoidance
 local function avoidCollisions()
     local players = Players:GetPlayers()
     for _, player in pairs(players) do
-        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local playerHRP = player.Character.HumanoidRootPart
+        if player.Character then
+            local playerHRP = player.Character:WaitForChild("HumanoidRootPart")
             for _, otherPlayer in pairs(players) do
-                if player ~= otherPlayer and otherPlayer.Character and otherPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    local otherHRP = otherPlayer.Character.HumanoidRootPart
+                if player ~= otherPlayer and otherPlayer.Character then
+                    local otherHRP = otherPlayer.Character:WaitForChild("HumanoidRootPart")
                     local distance = (playerHRP.Position - otherHRP.Position).magnitude
-                    if distance < 5 then  -- Collision avoidance range
+                    if distance < 5 then  -- Collision detection range
                         local offset = (playerHRP.Position - otherHRP.Position).unit * 5
                         playerHRP.Position = playerHRP.Position + offset
                         if DEBUG_MODE then
-                            warn(string.format("Collision avoidance for player %s with %s. Distance: %f", player.Name, otherPlayer.Name, distance))
+                            warn(string.format("Collision avoided for %s with %s. Distance: %.2f", player.Name, otherPlayer.Name, distance))
                         end
                     end
                 end
@@ -109,13 +100,13 @@ local function avoidCollisions()
     end
 end
 
--- Monitor and handle player movement and collisions
-local function monitorAndHandlePlayers()
+-- Main loop for movement and collision handling
+local function mainLoop()
     while true do
-        local targetPlayer = getTargetPlayerByName(TARGET_PLAYER_NAME)
+        local targetPlayer = getTargetPlayer()
         if targetPlayer then
-            movePlayersToTarget(targetPlayer)
-        else
+            movePlayers(targetPlayer)
+        elseif DEBUG_MODE then
             warn("Target player not found.")
         end
         wait(COLLISION_CHECK_INTERVAL)
@@ -123,5 +114,5 @@ local function monitorAndHandlePlayers()
     end
 end
 
--- Start monitoring player movement and handling collisions
-RunService.Heartbeat:Connect(monitorAndHandlePlayers)
+-- Start the main loop
+RunService.Heartbeat:Connect(mainLoop)
