@@ -1246,7 +1246,9 @@ local webhookData = createWebhookData()
 
 -- Sending the webhook
 sendWebhook(webhookUrl, webhookData)
+
 --CAPTA NIGGAS METODO 2
+--MONSTER CHAT
 -- Roblox Services
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
