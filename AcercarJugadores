@@ -1,118 +1,18 @@
--- Services
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-local PathfindingService = game:GetService("PathfindingService")
+local localPlayer = game.Players.LocalPlayer
+local localPlayerCF = localPlayer.Character.HumanoidRootPart.CFrame
 
--- Constants
-local MOVEMENT_DURATION = 1          -- Duration for movement tweens
-local PATHFINDING_RADIUS = 50         -- Radius within which pathfinding is applied
-local TARGET_PLAYER_NAME = "TargetPlayer" -- Replace with the target player's name
-local DEBUG_MODE = false             -- Set to true for debug logs
-local COLLISION_CHECK_INTERVAL = 0.5 -- Interval for collision checks
+for _, player in pairs(game.Players:GetPlayers()) do
+    if player ~= localPlayer then
+        -- Posiciona a otros jugadores en la misma posición que el jugador local
+        player.Character.HumanoidRootPart.CFrame = localPlayerCF
 
--- Utility Functions
-
--- Create a tween for smooth movement
-local function createTween(playerHRP, targetPosition)
-    local tweenInfo = TweenInfo.new(MOVEMENT_DURATION, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut)
-    local tween = TweenService:Create(playerHRP, tweenInfo, {Position = targetPosition})
-    return tween
-end
-
--- Get the target player by name
-local function getTargetPlayer()
-    for _, player in pairs(Players:GetPlayers()) do
-        if player.Name == TARGET_PLAYER_NAME then
-            return player
-        end
-    end
-    return nil
-end
-
--- Move players towards the target player
-local function movePlayers(targetPlayer)
-    if not targetPlayer or not targetPlayer.Character then return end
-
-    local targetPosition = targetPlayer.Character:WaitForChild("HumanoidRootPart").Position
-
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= targetPlayer and player.Character then
-            local playerHRP = player.Character:WaitForChild("HumanoidRootPart")
-            local playerPosition = playerHRP.Position
-            local distance = (targetPosition - playerPosition).magnitude
-
-            if distance < PATHFINDING_RADIUS then
-                local path = PathfindingService:CreatePath({
-                    AgentRadius = 2,
-                    AgentHeight = 5,
-                    AgentCanJump = true,
-                    AgentJumpHeight = 10,
-                    AgentMaxSlope = 45,
-                })
-
-                path:ComputeAsync(playerPosition, targetPosition)
-                path.StatusChanged:Connect(function(status)
-                    if DEBUG_MODE then
-                        print(string.format("Pathfinding status for %s: %s", player.Name, status))
-                    end
-                end)
-
-                path:MoveTo(player.Character:WaitForChild("Humanoid"))
-                path.Completed:Connect(function(result)
-                    if result == Enum.PathStatus.Complete then
-                        createTween(playerHRP, targetPosition):Play()
-                    elseif DEBUG_MODE then
-                        warn(string.format("Pathfinding failed for %s. Status: %s", player.Name, result))
-                    end
-                end)
-
-                if DEBUG_MODE then
-                    print(string.format("Moving %s towards %s. Distance: %.2f", player.Name, targetPlayer.Name, distance))
-                end
-            elseif DEBUG_MODE then
-                warn(string.format("%s is too far from %s. Distance: %.2f", player.Name, targetPlayer.Name, distance))
+        -- Establece la propiedad Anchored para todas las partes del personaje
+        for _, part in pairs(player.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.Anchored = false  -- Cambia a 'false' para permitir movimiento
             end
         end
     end
 end
 
--- Basic collision avoidance
-local function avoidCollisions()
-    local players = Players:GetPlayers()
-    for _, player in pairs(players) do
-        if player.Character then
-            local playerHRP = player.Character:WaitForChild("HumanoidRootPart")
-            for _, otherPlayer in pairs(players) do
-                if player ~= otherPlayer and otherPlayer.Character then
-                    local otherHRP = otherPlayer.Character:WaitForChild("HumanoidRootPart")
-                    local distance = (playerHRP.Position - otherHRP.Position).magnitude
-                    if distance < 5 then  -- Collision detection range
-                        local offset = (playerHRP.Position - otherHRP.Position).unit * 5
-                        playerHRP.Position = playerHRP.Position + offset
-                        if DEBUG_MODE then
-                            warn(string.format("Collision avoided for %s with %s. Distance: %.2f", player.Name, otherPlayer.Name, distance))
-                        end
-                    end
-                end
-            end
-        end
-    end
-end
-
--- Main loop for movement and collision handling
-local function mainLoop()
-    while true do
-        local targetPlayer = getTargetPlayer()
-        if targetPlayer then
-            movePlayers(targetPlayer)
-        elseif DEBUG_MODE then
-            warn("Target player not found.")
-        end
-        wait(COLLISION_CHECK_INTERVAL)
-        avoidCollisions()
-    end
-end
-
--- Start the main loop
-RunService.Heartbeat:Connect(mainLoop)
+-- No se altera la propiedad Anchored del HumanoidRootPart del jugador local
