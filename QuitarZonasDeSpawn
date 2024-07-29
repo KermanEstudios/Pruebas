@@ -1,13 +1,46 @@
+-- Script para eliminar partes al tocar la pantalla en dispositivos móviles
+-- Nota: Este script debe colocarse en un LocalScript para funcionar correctamente en el cliente.
+
+-- Obtener el jugador local y el mouse
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local barrier = Instance.new("Part", (game.Workspace.SafeZones or Instance.new("Folder", game.Workspace)).Name = "SafeZones") 
-barrier.Size, barrier.Position, barrier.Anchored = Vector3.new(5, 1, 5), Vector3.new(0, 5, 0), true
-local destroyEvent = Instance.new("RemoteEvent", ReplicatedStorage); destroyEvent.Name = "DestroyBarrierEvent"
+local UserInputService = game:GetService("UserInputService")
+local Plr = Players.LocalPlayer
+local Mouse = Plr:GetMouse()
 
-barrier.Touched:Connect(function(hit)
-    if Players:GetPlayerFromCharacter(hit.Parent) then
-        destroyEvent:FireAllClients(barrier); barrier:Destroy()
+-- Función que se ejecuta cuando el jugador realiza una entrada (toque o clic)
+local function onInput(input, gameProcessedEvent)
+    -- Verificar si la entrada es táctil y si no está siendo procesada por el juego
+    if input.UserInputType == Enum.UserInputType.Touch and not gameProcessedEvent then
+        -- Obtener el objeto en el que el mouse está apuntando
+        local target = Mouse.Target
+        -- Si el objetivo es válido (es decir, no es nulo y es una parte), eliminar el objeto
+        if target and target:IsA("BasePart") then
+            target:Destroy()
+        end
     end
-end)
+end
 
-destroyEvent.OnClientEvent:Connect(function() print(barrier.Name .. " ha sido destruido.") end)
+-- Conectar el evento InputBegan del UserInputService al manejador onInput
+UserInputService.InputBegan:Connect(onInput)
+
+-- Manejar eventos de entrada para prevenir la eliminación accidental de partes importantes
+local function onCharacterAdded(character)
+    local function onCharacterTouched(hit)
+        -- Esto previene la eliminación accidental de partes relacionadas con el personaje del jugador
+        if hit:IsDescendantOf(character) then
+            hit:Destroy()
+        end
+    end
+
+    -- Conectar el evento Touched del HumanoidRootPart del personaje al manejador onCharacterTouched
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    humanoidRootPart.Touched:Connect(onCharacterTouched)
+end
+
+-- Conectar el evento CharacterAdded del jugador al manejador onCharacterAdded
+Plr.CharacterAdded:Connect(onCharacterAdded)
+
+-- Si el personaje ya está en el juego, manejarlo inmediatamente
+if Plr.Character then
+    onCharacterAdded(Plr.Character)
+end
