@@ -1,18 +1,56 @@
-local localPlayer = game.Players.LocalPlayer
-local localPlayerCF = localPlayer.Character.HumanoidRootPart.CFrame
+local Players = game.Players
+local localPlayer = Players.LocalPlayer
 
-for _, player in pairs(game.Players:GetPlayers()) do
-    if player ~= localPlayer then
-        -- Posiciona a otros jugadores en la misma posición que el jugador local
-        player.Character.HumanoidRootPart.CFrame = localPlayerCF
+-- Función para actualizar las posiciones y estados de los jugadores
+local function updatePlayerPositions()
+    local localPlayerCF = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") and localPlayer.Character.HumanoidRootPart.CFrame or nil
 
-        -- Establece la propiedad Anchored para todas las partes del personaje
-        for _, part in pairs(player.Character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.Anchored = false  -- Cambia a 'false' para permitir movimiento
+    if localPlayerCF then
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= localPlayer and player.Character then
+                local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+                if humanoidRootPart then
+                    humanoidRootPart.CFrame = localPlayerCF
+                end
+                
+                local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    humanoid.PlatformStand = true
+                    humanoid.WalkSpeed = 0
+                    humanoid.JumpPower = 0
+                end
+                
+                for _, part in pairs(player.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.Anchored = true
+                    end
+                end
             end
+        end
+
+        -- Desancla el HumanoidRootPart del jugador local
+        localPlayer.Character.HumanoidRootPart.Anchored = false
+    end
+end
+
+-- Función para manejar la muerte del jugador local
+local function onCharacterAdded(character)
+    -- Espera a que el personaje tenga un HumanoidRootPart
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    if humanoidRootPart then
+        updatePlayerPositions()
+        -- Ejecuta el bucle infinito
+        while true do
+            updatePlayerPositions()
+            wait(0.1) -- Espera un corto periodo de tiempo antes de volver a ejecutar el bucle
         end
     end
 end
 
--- No se altera la propiedad Anchored del HumanoidRootPart del jugador local
+-- Conecta la función al evento CharacterAdded
+localPlayer.CharacterAdded:Connect(onCharacterAdded)
+
+-- Si el personaje ya está en el juego (caso de reentrada al juego), ejecuta la función directamente
+if localPlayer.Character then
+    onCharacterAdded(localPlayer.Character)
+end
