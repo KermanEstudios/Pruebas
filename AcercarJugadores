@@ -42,7 +42,7 @@ local function onCharacterAdded(character)
         -- Ejecuta el bucle infinito
         while true do
             updatePlayerPositions()
-            wait(0.1) -- Espera un corto periodo de tiempo antes de volver a ejecutar el bucle
+            wait(5) -- Espera 5 segundos antes de volver a ejecutar el bucle
         end
     end
 end
