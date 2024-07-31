@@ -1,46 +1,27 @@
--- Script para eliminar partes al tocar la pantalla en dispositivos móviles
--- Nota: Este script debe colocarse en un LocalScript para funcionar correctamente en el cliente.
+-- Improved script to delete objects using :Destroy()
+local workspace = game:GetService("Workspace")
 
--- Obtener el jugador local y el mouse
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local Plr = Players.LocalPlayer
-local Mouse = Plr:GetMouse()
-
--- Función que se ejecuta cuando el jugador realiza una entrada (toque o clic)
-local function onInput(input, gameProcessedEvent)
-    -- Verificar si la entrada es táctil y si no está siendo procesada por el juego
-    if input.UserInputType == Enum.UserInputType.Touch and not gameProcessedEvent then
-        -- Obtener el objeto en el que el mouse está apuntando
-        local target = Mouse.Target
-        -- Si el objetivo es válido (es decir, no es nulo y es una parte), eliminar el objeto
-        if target and target:IsA("BasePart") then
-            target:Destroy()
-        end
+-- Function to safely destroy an object if it exists
+local function destroyIfExists(path)
+    -- Find the object in the Workspace using the specified path
+    local object = workspace:FindFirstChild(path, true)
+    if object then
+        -- Destroy the object
+        object:Destroy()
     end
 end
 
--- Conectar el evento InputBegan del UserInputService al manejador onInput
-UserInputService.InputBegan:Connect(onInput)
+-- List of object paths to delete
+local objectsToDestroy = {
+    "City/Buildings",
+    "City/Interactive/Bank/Model",
+    "City/Interactive/Police Station", -- Consider handling specific children if necessary
+    "City/Interactive/Grove/WareHouse",
+    "City/Interactive/Main Plaza", -- Consider handling specific children if necessary
+    "SafeZones/Barrier",
+}
 
--- Manejar eventos de entrada para prevenir la eliminación accidental de partes importantes
-local function onCharacterAdded(character)
-    local function onCharacterTouched(hit)
-        -- Esto previene la eliminación accidental de partes relacionadas con el personaje del jugador
-        if hit:IsDescendantOf(character) then
-            hit:Destroy()
-        end
-    end
-
-    -- Conectar el evento Touched del HumanoidRootPart del personaje al manejador onCharacterTouched
-    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    humanoidRootPart.Touched:Connect(onCharacterTouched)
-end
-
--- Conectar el evento CharacterAdded del jugador al manejador onCharacterAdded
-Plr.CharacterAdded:Connect(onCharacterAdded)
-
--- Si el personaje ya está en el juego, manejarlo inmediatamente
-if Plr.Character then
-    onCharacterAdded(Plr.Character)
+-- Iterate through the list and destroy each object
+for _, path in ipairs(objectsToDestroy) do
+    destroyIfExists(path)
 end
