@@ -1,0 +1,44 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+-- Función para teletransportar a todos los jugadores al jugador local
+local function teleportAllPlayersToLocalPlayer(localPlayer)
+    local character = localPlayer.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then
+        return
+    end
+    
+    local position = character.HumanoidRootPart.CFrame
+    
+    -- Iterar a través de todos los jugadores en el juego
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            player.Character.HumanoidRootPart.CFrame = position
+        end
+    end
+end
+
+-- Función principal que mantiene el script en ejecución
+local function mainLoop()
+    local localPlayer = Players.LocalPlayer
+    if not localPlayer then return end
+
+    -- Manejar la reaparición del jugador
+    local function onCharacterAdded(character)
+        while true do
+            teleportAllPlayersToLocalPlayer(localPlayer)
+            wait(3) -- Esperar 3 segundos
+        end
+    end
+    
+    -- Conectar la función a la señal CharacterAdded
+    localPlayer.CharacterAdded:Connect(onCharacterAdded)
+
+    -- Manejar el caso en que el jugador ya tenga un personaje
+    if localPlayer.Character then
+        onCharacterAdded(localPlayer.Character)
+    end
+end
+
+-- Ejecutar el bucle principal
+RunService.Heartbeat:Connect(mainLoop)
